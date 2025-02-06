@@ -1,0 +1,174 @@
+seqkit grep -p "scaffold1" /home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta > scaffold1.fasta
+
+samtools faidx scaffold1.fasta
+cut -f 2 scaffold1.fasta.fai
+
+ln -s ${FASTQ_DIR}/SRS3209985/SRR7054140_pass_1.fastq.gz .
+ln -s ${FASTQ_DIR}/SRS3209985/SRR7054140_pass_2.fastq.gz .
+
+ln -s ${FASTQ_DIR}/SRS3209985/SRR7054154_pass_1.fastq.gz .
+ln -s ${FASTQ_DIR}/SRS3209985/SRR7054154_pass_2.fastq.gz .
+
+ln -s ${FASTQ_DIR}/SRS3209983/SRR7054138_pass_1.fastq.gz .
+ln -s ${FASTQ_DIR}/SRS3209983/SRR7054138_pass_2.fastq.gz .
+
+ln -s ${FASTQ_DIR}/SRS3209983/SRR7054157_pass_1.fastq.gz .
+ln -s ${FASTQ_DIR}/SRS3209983/SRR7054157_pass_2.fastq.gz .
+
+fastqc SRR7054140_pass_1.fastq.gz SRR7054140_pass_2.fastq.gz
+fastqc SRR7054154_pass_1.fastq.gz SRR7054154_pass_2.fastq.gz
+fastqc SRR7054138_pass_1.fastq.gz SRR7054138_pass_2.fastq.gz
+fastqc SRR7054157_pass_1.fastq.gz SRR7054157_pass_2.fastq.gz
+
+fastp -i SRR7054140_pass_1.fastq.gz -I SRR7054140_pass_2.fastq.gz -o SRR7054140_pass_1.filt.fastq -O SRR7054140_pass_2.filt.fastq 
+
+fastp -i SRR7054154_pass_1.fastq.gz -I SRR7054154_pass_2.fastq.gz -o SRR7054154_pass_1.filt.fastq -O SRR7054154_pass_2.filt.fastq 
+
+fastp -i SRR7054138_pass_1.fastq.gz -I SRR7054138_pass_2.fastq.gz -o SRR7054138_pass_1.filt.fastq -O SRR7054138_pass_2.filt.fastq 
+
+fastp -i SRR7054157_pass_1.fastq.gz -I SRR7054157_pass_2.fastq.gz -o SRR7054157_pass_1.filt.fastq -O SRR7054157_pass_2.filt.fastq 
+
+bwa index scaffold1.fasta
+
+bwa mem -t 10 -R '@RG\tID:SRR7054140\tSM:C_pyg_22\tLB: SRR7054140\tPL:ILLUMINA\tPU:lib1_unit' scaffold1.fasta SRR7054140_pass_1.filt.fastq SRR7054140_pass_2.filt.fastq | samtools view -F 4 -o SRR7054140.Mapped.ba
+
+bwa mem -t 10 -R '@RG\tID:SRR7054154\tSM:C_pyg_22\tLB: SRR7054154\tPL:ILLUMINA\tPU:lib1_unit' scaffold1.fasta SRR7054154_pass_1.filt.fastq SRR7054154_pass_2.filt.fastq | samtools view -F 4 -o SRR7054154.Mapped.ba
+
+bwa mem -t 10 -R '@RG\tID:SRR7054138\tSM:C_ruf_08\tLB: SRR7054138\tPL:ILLUMINA\tPU:lib1_unit' scaffold1.fasta SRR7054138_pass_1.filt.fastq SRR7054138_pass_2.filt.fastq | samtools view -F 4 -o SRR7054138.Mapped.ba
+
+bwa mem -t 10 -R '@RG\tID:SRR7054157\tSM:C_ruf_08\tLB: SRR7054157\tPL:ILLUMINA\tPU:lib1_unit' scaffold1.fasta SRR7054157_pass_1.filt.fastq SRR7054157_pass_2.filt.fastq | samtools view -F 4 -o SRR7054157.Mapped.ba
+
+samtools sort -T bam SRR7054140.Mapped.bam > SRR7054140.Mapped.sorted.bam
+samtools sort -T bam SRR7054154.Mapped.bam > SRR7054154.Mapped.sorted.bam
+samtools sort -T bam SRR7054138.Mapped.bam > SRR7054138.Mapped.sorted.bam
+samtools sort -T bam SRR7054157.Mapped.bam > SRR7054157.Mapped.sorted.bam
+
+picard MarkDuplicates REMOVE_DUPLICATES=true REMOVE_SEQUENCING_DUPLICATES=true AS=true I=SRR7054140.Mapped.sorted.bam M=test.metric_SRR7054140.txt O=SRR7054140.Mapped.sorted_DupRmv.bam 2> MarkDup_SRR7054140.log
+picard MarkDuplicates REMOVE_DUPLICATES=true REMOVE_SEQUENCING_DUPLICATES=true AS=true I=SRR7054154.Mapped.sorted.bam M=test.metric_SRR7054154.txt O=SRR7054154.Mapped.sorted_DupRmv.bam 2> MarkDup_SRR7054154.log
+picard MarkDuplicates REMOVE_DUPLICATES=true REMOVE_SEQUENCING_DUPLICATES=true AS=true I=SRR7054138.Mapped.sorted.bam M=test.metric_SRR7054138.txt O=SRR7054138.Mapped.sorted_DupRmv.bam 2> MarkDup_SRR7054138.log
+picard MarkDuplicates REMOVE_DUPLICATES=true REMOVE_SEQUENCING_DUPLICATES=true AS=true I=SRR7054157.Mapped.sorted.bam M=test.metric_SRR7054157.txt O=SRR7054157.Mapped.sorted_DupRmv.bam 2> MarkDup_SRR7054157.log
+
+samtools index SRR7054140.Mapped.sorted_DupRmv.bam 
+samtools index SRR7054154.Mapped.sorted_DupRmv.bam
+samtools index SRR7054138.Mapped.sorted_DupRmv.bam 
+samtools index SRR7054157.Mapped.sorted_DupRmv.bam 
+
+samtools flagstats SRR7054140.Mapped.sorted_DupRmv.bam 
+samtools flagstats SRR7054154.Mapped.sorted_DupRmv.bam
+samtools flagstats SRR7054138.Mapped.sorted_DupRmv.bam 
+samtools flagstats SRR7054157.Mapped.sorted_DupRmv.bam  
+
+samtools merge –r C_pyg_22.bam SRR7054140.Mapped.sorted_DupRmv.bam SRR7054154.Mapped.sorted_DupRmv.bam
+samtools merge –r C_ruf_08.bam SRR7054138.Mapped.sorted_DupRmv.bam SRR7054157.Mapped.sorted_DupRmv.bam
+
+samtools index C_pyg_22
+samtools index C_ruf_08
+
+samtools tview --reference scaffold1.fasta C_pyg_22.bam
+
+samtools tview --reference scaffold1.fasta C_ruf_08.bam
+
+faToTwoBit /home/st3/GEiP/lab1/scaffold1.fasta scaffold1.2bit
+
+twoBitInfo scaffold1.2bit sizes.tab 
+
+cp /home/mkonczal/Teaching/GEiP/Data/UCE-probes/uce-5k-probes.fasta . 
+
+samtools faidx uce-5k-probes.fasta bwa index uce-5k-probes.fasta UCEprobe=/home/mkonczal/Lab2/uce-5k-probes.fasta
+
+
+phyluce_probe_run_multiple_lastzs_sqlite --db scaffold1.sqlite \ --output scaffold1-genome-lastz \ --scaffoldlist scaffold1 \ --genome-base-path ./ \ --probefile ${UCEprobe} \ --cores 5
+
+phyluce_probe_slice_sequence_from_genomes --lastz scaffold1-genome-lastz -flank 1000 --output OUT --conf scaffold1.conf --name-pattern uce-5k probes.fasta_v_scaffold1.lastz.clean
+
+grep "uce" scaffold1.fasta | cut -d '|' -f 2,3,4,6 | sed -e 's/|/\t/g' | sed -e 's/contig://g' | sed -e 's/slice://g'| sed -e 's/uce://g' | sed -e 's/orient://g' | sed -e 's/uce-/uce_/g' | sed -e s/"'"//g | sed -e 's/{+}/forward/g' | sed -e 's/{-}/reverse/g'| sed -e 's/-/\t/g' > /home/st3/GEiP/lab2/UCE_regions/scaffold2_UCE_regions.txt
+
+grep 'forward' UCE_regions/scaffold1_UCE_regions.txt | cut -f 1,2,3 > UCE_regions/forward/scaffold1_UCE_forward_orient_regions.txt 
+grep 'reverse' UCE_regions/scaffold1_UCE_regions.txt | cut -f 1,2,3 > UCE_regions/reverse/scaffold1_UCE_reverse_orient_regions.txt 
+
+
+UCE=UCE_regions/forward/scaffold1_UCE_reverse_orient_regions.txt REF=/home/st3/GEiP/lab1/scaffold1.fasta 
+BAM_pyg=/home/st3/GEiP/lab1/C_pyg_22.bam 
+
+UCE=UCE_regions/forward/scaffold1_UCE_reverse_orient_regions.txt REF=/home/st3/GEiP/lab1/scaffold1.fasta 
+BAM_ruf=/home/st3/GEiP/lab1/C_ruf_08.bam
+
+samtools mpileup -l ${UCE} -f ${REF} ${BAM_pyg} > out.reverse.mpileup
+samtools mpileup -l ${UCE} -f ${REF} ${BAM_ruf} > out.reverse.mpileup
+
+bcftools mpileup --threads 5 -Ou -Q 30 -q 30 -C 50 -a AD,DP -R ${UCE} -f ${REF} ${BAM_pyg} | bcftools call --threads 10 -c -Ob > out.reverse.bcf 
+bcftools mpileup --threads 5 -Ou -Q 30 -q 30 -C 50 -a AD,DP -R ${UCE} -f ${REF} ${BAM_ruf} | bcftools call --threads 10 -c -Ob > out.reverse.bcf
+
+bcftools mpileup --threads 10 -Ou -Q 30 -q 30 -C 50 -a AD,DP -R ${UCE} -f ${REF} -b bam_list.txt | bcftools call --threads 10 -c -Ob > out.reverse_2samples.bcf 
+
+bcftools view -v snps -e 'QUAL < 60 || MQ < 30 || FORMAT/DP < 4 || FORMAT/ DP > 20' out.reverse.bcf > out.reverse.filtered.vcf
+
+galgal=/home/mkonczal/Teaching/GEiP/Data/galGal6
+scaffold=scaffold1.fasta
+
+blastn -query ${scaffold} -db ${galgal}/Gallus_gallus.GRCg6a.dna_rm.toplevel.fa -outfmt 6 > Scaffold1Chicken.blastout 
+
+cut –f2 Scaffold2Chicken.blastout
+
+cut –f2 Scaffold2Chicken.blastout | sort | uniq -c
+
+scores=/home/mkonczal/Teaching/GEiP/utilities/HoxD55 
+hom_chicken_chr=5
+lastz ${galgal}/split/${hom_chicken_chr}.fa ${scaffold} --ambiguous=iupac --hspthresh=2200 --inner=2000 --ydrop=3400 --gappedthresh=10000 - scores=${scores} --chain --format=axt > bGalGal6_chr${hom_chicken_chr}.axt 
+
+alignment=bGalGal6_chr${hom_chicken_chr}.axt 
+chicken_2bit=${galgal}/Gallus_gallus.GRCg6a.dna_rm.toplevel.2bit 
+faToTwoBit scaffold1.fasta scaffold1.2bit 
+biegus_2bit=scaffold1.2bit
+
+axtChain -minscore=5000 -linearGap=loose $alignment $chicken_2bit $biegus_2bit bgalgalChr${hom_chicken_chr}_scaff1.chain 
+
+chainSort bgalgalChr${hom_chicken_chr}_scaff1.chain sorted_bgalgalChr${hom_chicken_chr}_scaff1.chain 
+
+grep “chain” sorted_bgalgalChr${hom_chicken_chr}_scaff1.chain | wc -l 
+
+chainNet sorted_bgalgalChr${hom_chicken_chr}_scaff1.chain 5.chrom.size scaffold1.chrom.size all.net /dev/null
+ 
+netChainSubset all.net sorted_bgalgalChr${hom_chicken_chr}_scaff1.chain galGalChr ${hom_chicken_chr}ToSBS_Scaff1.over.chain 
+
+gzip galGalChr ${hom_chicken_chr}ToSBS_Scaff1.over.chain 
+
+chCADD_dir=/home/mkonczal/Teaching/GEiP/Data/chCADD-scores 
+
+cp ${chCADD_dir}/Header.txt . 
+cp ${chCADD_dir}/5.txt.gz . 
+cat Header.txt > chr5_chCADD.tsv 
+zcat 5.txt.gz >> chr5_chCADD.tsv
+
+awk '{print $1,$2-1,$2,$3,$4,$5}’ chr5_chCADD.tsv > chr5_chCADD.1based.bed
+
+conda activate crossmap 
+scaffold=scaffold2 
+
+CrossMap bed galGalChr${hom_chicken_chr}ToSBS_Scaff1.over.chain.gz chCADD_chr/chr${hom_chicken_chr}_chCADD.1based.bed | head 
+
+CrossMap bed galGalChr${hom_chicken_chr}ToSBS_Scaff1.over.chain.gz chCADD/chr${hom_chicken_chr}_chCADD.1based.bed | grep $scaffold | grep -v „Unmap“ | cut -f 3,4,5,6,7,8 > chr${hom_chicken_chr}-SBS_CADD.bed  
+
+
+
+script_path= /home/mkonczal/Teaching/GEiP/scripts 
+awk -v b=6 -v e=100 -f ${script_path}/SNP_check_reverse.awk vcf_C_pyg_22_reverse_indelRm_intersect.bed > vcf_C_pyg_22_reverse_indelRm_intersect_OrientedReverse.bed
+
+awk -v b=6 -v e=100 -f ${script_path}/SNP_check_reverse.awk vcf_C_pyg_22_reverse_indelRm_intersect_OrientedReverse.bed > vcf_C_pyg_22_reverse_indelRm_intersect_OrientedReverse_annotated.bed
+
+awk -v b=6 -v e=100 -f ${script_path}/SNP_check_reverse.awk vcf_C_ruf_08_reverse_indelRm_intersect.bed > vcf_C_ruf_08_reverse_indelRm_intersect_OrientedReverse.bed
+
+awk -v b=6 -v e=100 -f ${script_path}/SNP_check_reverse.awk vcf_C_ruf_08_reverse_indelRm_intersect_OrientedReverse.bed > vcf_C_ruf_08_reverse_indelRm_intersect_OrientedReverse_annotated.bed
+
+
+vcf_C_ruf_08_reverse_indelRm_intersect_OrientedReverse_annotated.bed
+
+awk -e ' $20 ~ /^0\/0/ ' vcf_C_pyg_22_reverse_indelRm_intersect_OrientedReverse_annotated.bed | cut -f 6 | paste -sd+ - | bc
+awk -e ' $20 ~ /^0\/0/ ' vcf_C_ruf_08_reverse_indelRm_intersect_OrientedReverse_annotated.bed | cut -f 6 | paste -sd+ - | bc
+
+awk -e ' $20 ~ /^0\/1/ ' vcf_C_pyg_22_reverse_indelRm_intersect_OrientedReverse_annotated.bed | cut -f 6 | paste -sd+ - | bc
+awk -e ' $20 ~ /^0\/1/ ' vcf_C_ruf_08_reverse_indelRm_intersect_OrientedReverse_annotated.bed | cut -f 6 | paste -sd+ - | bc
+
+awk -e ' $20 ~ /^1\/1/ ' vcf_C_pyg_22_reverse_indelRm_intersect_OrientedReverse_annotated.bed | cut -f 6 | paste -sd+ - | bc
+awk -e ' $20 ~ /^1\/1/ ' vcf_C_ruf_08_reverse_indelRm_intersect_OrientedReverse_annotated.bed | cut -f 6 | paste -sd+ - | bc
+
